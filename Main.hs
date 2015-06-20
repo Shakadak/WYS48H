@@ -3,6 +3,7 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
 import Control.Monad
 import Numeric
+import Data.Char (digitToInt)
 
 main :: IO ()
 main = do
@@ -16,10 +17,10 @@ readExpr :: String -> String
 readExpr input = case parse parseExpr "lisp" input of
                    Left err -> "No match: " ++ show err
                    Right val -> "Found: " ++ case val of
-                                               Atom a -> a
-                                               Bool b -> show b
+                                               Atom a -> "atom " ++ a
+                                               Bool b -> "bool " ++ show b
                                                String s -> "string " ++ s
-                                               Number n -> show n
+                                               Number n -> "number " ++ show n
                                                _ -> "something"
 
 spaces :: Parser ()
@@ -56,13 +57,19 @@ parseAtom = do
                _    -> Atom atom
 
 parseNumber :: Parser LispVal
-parseNumber = many1 digit >>= return . Number . read
+parseNumber = parseDec <|> parseHex <|> parseOct <|> parseBin
 
 parseHex :: Parser LispVal
-parseHex = string "#h" >> many1 digit >>= return . (Number . fst . head . readHex)
+parseHex = string "#h" >> many1 digit >>= return . Number . fst . head . readHex
 
 parseOct :: Parser LispVal
-parseOct = string "#o" >> many1 digit >>= return . (Number . fst . head . readOct)
+parseOct = string "#o" >> many1 digit >>= return . Number . fst . head . readOct
+
+readBin :: (Eq a, Num a) => ReadS a
+readBin = readInt 2 (`elem` "01") digitToInt
+
+parseBin :: Parser LispVal
+parseBin = string "#b" >> many1 digit >>= return . Number . fst . head . readBin
 
 parseDec :: Parser LispVal
-parseDec = optional (string "#d") >> many1 digit >>= return . (Number . fst . head . readDec)
+parseDec = optional (string "#d") >> many1 digit >>= return . Number . fst . head . readDec
