@@ -2,11 +2,11 @@ module Main where
 import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
 import Control.Monad
+import Numeric
 
 main :: IO ()
 main = do
     args <- getArgs
-    putStrLn (args!!0)
     putStrLn (readExpr (args!!0))
 
 symbol :: Parser Char
@@ -38,9 +38,12 @@ parseExpr = parseAtom <|> parseString <|> parseNumber
 parseString :: Parser LispVal
 parseString = do
     char '"'
-    x <- many (noneOf "\"")
+    x <- many (parseEscaped <|> (noneOf "\""))
     char '"'
     return $ String x
+
+parseEscaped :: Parser Char
+parseEscaped = char '\\' >> oneOf ['n', 'r', 't', '\\', '"']
 
 parseAtom :: Parser LispVal
 parseAtom = do
@@ -53,4 +56,13 @@ parseAtom = do
                _    -> Atom atom
 
 parseNumber :: Parser LispVal
-parseNumber = many1 digit >>= return . (Number . read)
+parseNumber = many1 digit >>= return . Number . read
+
+parseHex :: Parser LispVal
+parseHex = string "#h" >> many1 digit >>= return . (Number . fst . head . readHex)
+
+parseOct :: Parser LispVal
+parseOct = string "#o" >> many1 digit >>= return . (Number . fst . head . readOct)
+
+parseDec :: Parser LispVal
+parseDec = optional (string "#d") >> many1 digit >>= return . (Number . fst . head . readDec)
