@@ -35,7 +35,6 @@ parseSpecial :: Parser LispVal
 parseSpecial = char '#' >> (parseBool <|> g)
                 where g = do
                             c <- oneOf "bodx"
-                            spaces
                             case c of
                                 'b' -> parseBin
                                 'o' -> parseOct
