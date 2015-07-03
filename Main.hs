@@ -33,7 +33,7 @@ parseExpr :: Parser LispVal
 parseExpr = parseAtom <|> parseString <|> parseDec <|> parseSpecial
 
 parseSpecial :: Parser LispVal
-parseSpecial = char '#' >> (parseBool <|> {-parseCharacter <|>-} parseNumber)
+parseSpecial = char '#' >> (parseBool <|> parseCharacter <|> parseNumber)
 
 parseBool :: Parser LispVal
 parseBool = do
@@ -42,11 +42,15 @@ parseBool = do
                     't' -> Bool True
                     'f' -> Bool False
 
-{-parseCharacter :: Parser Lispval
-
+parseCharacter :: Parser LispVal
 parseCharacter = do
-                    char '\'
-                    return $ try (any)-}
+                    char '\\'
+                    c <- try (f)
+                    return $ Character c
+                      where f = do
+                              c <- anyChar
+                              char ' '
+                              return c
 
 parseString :: Parser LispVal
 parseString = do
