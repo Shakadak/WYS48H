@@ -26,26 +26,27 @@ data LispVal = Atom String
              | DottedList [LispVal] LispVal
              | Number Integer
              | String String
+             | Character Char
              | Bool Bool deriving Show
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom <|> parseString <|> parseDec <|> parseSpecial
 
 parseSpecial :: Parser LispVal
-parseSpecial = char '#' >> (parseBool <|> g)
-                where g = do
-                            c <- oneOf "bodx"
-                            case c of
-                                'b' -> parseBin
-                                'o' -> parseOct
-                                'd' -> parseDec
-                                'x' -> parseHex
+parseSpecial = char '#' >> (parseBool <|> {-parseCharacter <|>-} parseNumber)
+
 parseBool :: Parser LispVal
 parseBool = do
                 c <- oneOf "tf"
                 return $ case c of
                     't' -> Bool True
                     'f' -> Bool False
+
+{-parseCharacter :: Parser Lispval
+
+parseCharacter = do
+                    char '\'
+                    return $ try (any)-}
 
 parseString :: Parser LispVal
 parseString = do
@@ -71,8 +72,17 @@ parseAtom = do
     let atom = first:rest
     return $ Atom atom
 
+parseNumber :: Parser LispVal
+parseNumber = do
+    c <- oneOf "bodx"
+    case c of
+      'b' -> parseBin
+      'o' -> parseOct
+      'd' -> parseDec
+      'x' -> parseHex
+
 parseHex :: Parser LispVal
-parseHex = many1 digit >>= return . Number . fst . head . readHex
+parseHex = many1 (digit <|> oneOf "abcdefABCDEF") >>= return . Number . fst . head . readHex
 
 parseOct :: Parser LispVal
 parseOct = many1 digit >>= return . Number . fst . head . readOct
