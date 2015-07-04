@@ -45,12 +45,18 @@ parseBool = do
 parseCharacter :: Parser LispVal
 parseCharacter = do
                     char '\\'
-                    c <- try (f)
+                    c <- g <|> f
                     return $ Character c
                       where f = do
                               c <- anyChar
                               char ' '
                               return c
+                            g =
+                                do
+                                    s <- string "space" <|> string "newline"
+                                    return $ case s of
+                                      "space"   -> ' '
+                                      "newline" -> '\n'
 
 parseString :: Parser LispVal
 parseString = do
